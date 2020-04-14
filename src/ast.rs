@@ -22,7 +22,7 @@ pub enum Expr {
     Not(Box<Not>),
     If(Box<If>),
     Chain(Chain),
-    VariableRef(Ident),
+    VariableRef(VariableRef),
     RecordRef(Box<RecordRef>),
 }
 
@@ -48,8 +48,13 @@ pub struct Chain {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct VariableRef {
+    pub identifier: Ident,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct RecordRef {
-    pub ident: Ident,
+    pub identifier: Ident,
     pub record: Expr,
 }
 

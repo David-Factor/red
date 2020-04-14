@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::result;
 
-use crate::ast::{Chain, Expr, If, Not, RecordRef};
+use crate::ast::{Chain, Expr, If, Not, RecordRef, VariableRef};
 use crate::ident::Ident;
 use crate::path::{Path, Seg};
 use crate::types::Type;
@@ -9,7 +9,7 @@ use crate::types::Type;
 type Result<'a> = result::Result<Type, Error<'a>>;
 
 #[derive(Debug)]
-struct Error<'a> {
+pub struct Error<'a> {
     path: Path,
     error: TypeError<'a>,
 }
@@ -30,6 +30,11 @@ struct TypeMismatch {
 
 pub type TypeContext = HashMap<Ident, Type>;
 
+pub fn typecheck<'a>(expr: &'a Expr, ctx: &mut TypeContext) -> Result<'a> {
+    let path = Vec::new();
+    expr.check(path, ctx)
+}
+
 trait Typecheck {
     fn check<'c>(&'c self, path: Path, ctx: &mut TypeContext) -> Result;
 }
@@ -41,14 +46,14 @@ impl Typecheck for Expr {
                 error: TypeError::EmptyExpr,
                 path: path,
             }),
-            Expr::LitBool(_) => Ok(Type::Boolean),
+            Expr::LitBool(_) => Ok(Type::Bool),
             Expr::LitNumber(_) => Ok(Type::Number),
             Expr::LitText(_) => Ok(Type::Text),
             Expr::Not(ref not) => not.check(path, ctx),
             Expr::If(ref if_) => if_.check(path, ctx),
             Expr::Chain(ref chain) => chain.check(path, ctx),
-            Expr::VariableRef(ref var) => ctx.get(var).cloned().ok_or(Error {
-                error: TypeError::Undefined(var),
+            Expr::VariableRef(ref var) => ctx.get(&var.identifier).cloned().ok_or(Error {
+                error: TypeError::Undefined(&var.identifier),
                 path: path,
             }),
             Expr::RecordRef(ref record_ref) => record_ref.check(path, ctx),
@@ -93,7 +98,16 @@ impl Typecheck for Chain {
             })
             .last()
             // FIXME unwrap as List
-            .unwrap_or(Ok(Type::Unit))
+            .unwrap_or(Ok(Type::List(Box::new(Type::Unit))))
+    }
+}
+
+impl Typecheck for VariableRef {
+    fn check<'c>(&'c self, path: Path, ctx: &mut TypeContext) -> Result {
+        ctx.get(&self.identifier).cloned().ok_or(Error {
+            error: TypeError::Undefined(&self.identifier),
+            path: path,
+        })
     }
 }
 
@@ -106,8 +120,8 @@ impl Typecheck for RecordRef {
 
         match assert_record(&self.record, path, ctx) {
             Err(error) => Err(error),
-            Ok(ctx_) => ctx_.get(&self.ident).cloned().ok_or(Error {
-                error: TypeError::Undefined(&self.ident),
+            Ok(ctx_) => ctx_.get(&self.identifier).cloned().ok_or(Error {
+                error: TypeError::Undefined(&self.identifier),
                 path: p,
             }),
         }
@@ -116,11 +130,11 @@ impl Typecheck for RecordRef {
 
 fn assert_bool<'c>(expr: &'c Expr, path: Path, ctx: &mut TypeContext) -> Result<'c> {
     match expr.check(path.clone(), ctx) {
-        Ok(Type::Boolean) => Ok(Type::Boolean),
+        Ok(Type::Bool) => Ok(Type::Bool),
         Ok(type_) => Err(Error {
             path,
             error: TypeError::TypeMismatch(TypeMismatch {
-                expected: Type::Boolean,
+                expected: Type::Bool,
                 received: type_,
             }),
         }),

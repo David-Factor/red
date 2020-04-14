@@ -1,27 +1,29 @@
 use std::collections::HashMap;
-use std::fmt;
+
+use serde::Deserialize;
+use serde_json::error::Error;
 
 use crate::ident::Ident;
 
-#[derive(Debug, Clone)]
-pub enum Type {
-    Number,
-    Boolean,
-    Text,
-    Unit,
-    Record(HashMap<Ident, Type>),
-    List(Box<Type>),
+pub fn parse(exp: &str) -> Result<HashMap<Ident, Type>, Error> {
+    serde_json::from_str(&exp)
 }
 
-impl fmt::Display for Type {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Type::Number => write!(f, "Number"),
-            Type::Boolean => write!(f, "Boolean"),
-            Type::Text => write!(f, "Text"),
-            Type::Unit => write!(f, "Unit"),
-            Type::Record(record) => write!(f, "Record {:?}", record),
-            Type::List(list) => write!(f, "List {:?}", list),
-        }
-    }
+#[derive(Deserialize, Debug, Clone)]
+#[serde(tag = "type", content = "parameter")]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Type {
+    Unit,
+    NonRule,
+    Bool,
+    Date,
+    DateTime,
+    Time,
+    Duration,
+    Weekday,
+    Number,
+    Text,
+    Record(HashMap<Ident, Type>),
+    List(Box<Type>),
+    Unknown,
 }

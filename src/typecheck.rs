@@ -20,8 +20,8 @@ impl<'a> From<Result<'a>> for Check<'a> {
 }
 
 impl<'a> From<Check<'a>> for Result<'a> {
-    fn from(result: Check<'a>) -> Result<'a> {
-        result.0
+    fn from(check: Check<'a>) -> Result<'a> {
+        check.0
     }
 }
 

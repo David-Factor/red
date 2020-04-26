@@ -19,6 +19,12 @@ use red::types::Type;
 // [ ] add remaining rules
 // [] update type context
 fn main() {
+    //let empty = r#"{"name": "empty"}";
+    let if_ = r#"{"name": "if",
+                     "condition": {"name": "nam", "identifier": "xxxxxxxxx"},
+                     "consequence": {"name": "litText", "value": "hello"}
+                    }"#;
+
     let chain = r#"{
                     "name": "chain",
                     "right": [{"name": "recordRef",
@@ -32,8 +38,8 @@ fn main() {
                     }]
                   }"#;
 
-    let expr = ast::parse(&chain).unwrap();
-    let mut type_context = read_type_context("./data/env.json").unwrap();
+    let expr = ast::parse(&if_).unwrap();
+    let mut type_context = read_type_context("../data/env.json").unwrap();
     //  println!("{:#?}", expr);
     //  println!("{:#?}", type_context);
     let check = typecheck::typecheck(&expr, &mut type_context);

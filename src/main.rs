@@ -28,17 +28,17 @@ fn main() {
     let chain = r#"{
                     "name": "chain",
                     "right": [{"name": "recordRef",
-                              "record": {"name": "variableRef", "identifier": "PaidRight"},
+                              "record": {"name": "variableRef", "identifier": "PaidRights"},
                               "identifier": "organisation"
                               }],
-                    "center": {"name": "variableRef", "identifier": "hello" },
+                    "center": {"name": "variableRef", "identifier": "helloworld" },
                     "left": [{"name": "if",
                                "condition": {"name": "litNumber", "value": 100},
                                "consequence": {"name": "litText", "value": "hello"}
                     }]
                   }"#;
 
-    let expr = ast::parse(&if_).unwrap();
+    let expr = ast::parse(&chain).unwrap();
     let mut type_context = read_type_context("../data/env.json").unwrap();
     //  println!("{:#?}", expr);
     //  println!("{:#?}", type_context);

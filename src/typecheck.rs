@@ -182,8 +182,6 @@ impl Typecheck for If {
     }
 }
 
-// FIXME
-// https://doc.rust-lang.org/stable/rust-by-example/error/iter_result.html
 impl Typecheck for Chain {
     fn check<'c>(&'c self, path: Path, ctx: &mut TypeContext) -> Check {
         self.chain
@@ -194,9 +192,16 @@ impl Typecheck for Chain {
                 path.push(Seg::ChainN(i as i32));
                 expr.check(path, ctx)
             })
-            .last()
-            // FIXME unwrap as List
-            .unwrap_or(Check(Ok(Type::List(Box::new(Type::Unit)))))
+            .fold(Check::succeed(Type::Unit), |acc, checked| match checked.0 {
+                Ok(type_) => Check::succeed(Type::List(Box::new(type_))),
+                Err(current_errors) => match acc.0 {
+                    Ok(_) => Check(Err(current_errors)),
+                    Err(errors) => {
+                        let next = current_errors.into_iter().chain(errors).collect();
+                        Check(Err(next))
+                    }
+                },
+            })
     }
 }
 

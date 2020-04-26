@@ -24,6 +24,7 @@ pub enum Expr {
     Chain(Chain),
     VariableRef(VariableRef),
     RecordRef(Box<RecordRef>),
+    Foreach(Box<Foreach>),
 }
 
 #[derive(Deserialize, Debug)]
@@ -56,6 +57,13 @@ pub struct VariableRef {
 pub struct RecordRef {
     pub identifier: Ident,
     pub record: Expr,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Foreach {
+    pub list: Expr,
+    pub body: Expr,
+    pub boundVar: String,
 }
 
 #[derive(Deserialize)]

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::From;
 use std::result;
 
-use crate::ast::{Chain, Expr, If, Not, RecordRef, VariableRef};
+use crate::ast::{Chain, Expr, Foreach, If, Not, RecordRef, VariableRef};
 use crate::ident::Ident;
 use crate::path::{Path, Seg};
 use crate::types::Type;
@@ -36,16 +36,26 @@ impl<'a> Check<'a> {
         Check(Ok(t))
     }
 
-    fn assert_bool(path: Path, type_: Type) -> Self {
-        match type_ {
-            Type::Bool => Check::succeed(Type::Bool),
-            type_ => Check::fail(Error {
+    fn assert_bool(path: Path, received: Type) -> Self {
+        Check::assert_type(path, Type::Bool, received)
+    }
+
+    fn assert_number(path: Path, received: Type) -> Self {
+        Check::assert_type(path, Type::Number, received)
+    }
+
+    fn assert_text(path: Path, received: Type) -> Self {
+        Check::assert_type(path, Type::Text, received)
+    }
+
+    fn assert_type(path: Path, expected: Type, received: Type) -> Self {
+        if expected == received {
+            Check::succeed(received)
+        } else {
+            Check::fail(Error {
                 path,
-                error: TypeError::TypeMismatch(TypeMismatch {
-                    expected: Type::Bool,
-                    received: type_,
-                }),
-            }),
+                error: TypeError::TypeMismatch(TypeMismatch { expected, received }),
+            })
         }
     }
 
@@ -67,6 +77,16 @@ impl<'a> Check<'a> {
                 Err(errors)
             }
             Err(error) => Err(error),
+        }
+    }
+
+    fn assert_list(path: Path, received: Type) -> Self {
+        match received {
+            Type::List(_) => Check::succeed(received),
+            _ => Check::fail(Error {
+                path,
+                error: TypeError::ExpectedList(received),
+            }),
         }
     }
 
@@ -113,6 +133,7 @@ enum TypeError<'a> {
     TypeMismatch(TypeMismatch),
     Undefined(&'a Ident),
     ExpectedRecord(Type),
+    ExpectedList(Type),
 }
 
 #[derive(Debug)]
@@ -147,6 +168,7 @@ impl Typecheck for Expr {
             Expr::Chain(ref chain) => chain.check(path, ctx),
             Expr::VariableRef(ref var) => var.check(path, ctx),
             Expr::RecordRef(ref record_ref) => record_ref.check(path, ctx),
+            Expr::Foreach(ref foreach_) => foreach_.check(path, ctx),
         }
     }
 }
@@ -234,5 +256,25 @@ impl Typecheck for RecordRef {
                 }),
             },
         }
+    }
+}
+
+impl Typecheck for Foreach {
+    fn check<'c>(&'c self, path: Path, ctx: &mut TypeContext) -> Check {
+        let mut list_path = path.clone();
+        let mut body_path = path.clone();
+
+        list_path.push(Seg::ForeachList);
+        body_path.push(Seg::ForeachBody);
+
+        let list = self
+            .list
+            .check(list_path.clone(), ctx)
+            .and_then(|type_| Check::assert_list(list_path, type_));
+
+        // TODO: Extend type context with bound variale
+        let body = self.body.check(body_path, ctx);
+
+        Check::map2(|_, type_| Type::List(Box::new(type_)), list, body)
     }
 }

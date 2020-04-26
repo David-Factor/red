@@ -9,7 +9,7 @@ pub fn parse(exp: &str) -> Result<HashMap<Ident, Type>, Error> {
     serde_json::from_str(&exp)
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(tag = "type", content = "parameter")]
 #[serde(rename_all = "UPPERCASE")]
 pub enum Type {

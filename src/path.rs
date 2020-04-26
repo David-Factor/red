@@ -7,4 +7,6 @@ pub enum Seg {
     IfCons,
     ChainN(i32),
     RecordRef,
+    ForeachList,
+    ForeachBody,
 }

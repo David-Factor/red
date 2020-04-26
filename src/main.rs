@@ -12,12 +12,12 @@ use red::types::Type;
 
 // TODO:
 // [x] split into modules
-// [] tests
-// [] return list of errors
+// [ ] tests
+// [x] return list of errors
 // [x] add type context
 // [x] deserialise
-// [ ] add remaining rules
-// [] update type context
+// [ ] add remaining exprs
+// [ ] update type context
 fn main() {
     //let empty = r#"{"name": "empty"}";
     let if_ = r#"{"name": "if",
